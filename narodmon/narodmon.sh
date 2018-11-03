@@ -2,8 +2,8 @@
 
 # Общие настройки
 
-LOG_FILE='/var/tmp/narodmon.log'
-TEMP_FILE='/var/tmp/narodmon'
+LOG_FILE='/var/log/narodmon.log'
+TEMP_FILE='/var/log/narodmon'
 
 # Настройки для narodmon.ru
 DEVICE_NAME='domoticz'
