@@ -6,12 +6,12 @@ LOG_FILE='/var/log/narodmon.log'
 TEMP_FILE='/var/log/narodmon'
 
 # Настройки для narodmon.ru
-DEVICE_NAME='domoticz'
-DEVICE_MAC='YOUMACADDRESS'
+DEVICE_NAME='CMS'
+DEVICE_MAC='C04A00A35406'
 SENSOR_TEMP_ID1='T1'
 SENSOR_TEMP_ID2='T2'
 SENSOR_HUM_ID='H1'
-SENSOR_SPEED_ID='S1'
+SENSOR_SPEED_ID='W1'
 SENSOR_DIRECTION_ID='D1'
 
 # Номер датчика, который достаем
@@ -32,10 +32,12 @@ if [ -z "$DOMOTICZ" ]
 then
 exit 1
 else
-TEMP1=$(echo $DOMOTICZ | jsonValue Temp 2)
+TEMP1=$(echo $DOMOTICZ | jsonValue Temp 1)
+Timeout=$(echo $DOMOTICZ | jsonValue HaveTimeout 1)
 # Округляем температуру до 1 знака после запятой
 TEMP1=$(echo "scale=1 ; $TEMP1/1" |bc)
 echo $TEMP1
+echo $Timeout
 fi
 
 # Номер датчика, который достаем
@@ -56,7 +58,7 @@ if [ -z "$DOMOTICZ" ]
 then
 exit 1
 else
-TEMP2=$(echo $DOMOTICZ | jsonValue Temp 2)
+TEMP2=$(echo $DOMOTICZ | jsonValue Temp 1)
 # Округляем температуру до 1 знака после запятой
 TEMP2=$(echo "scale=1 ; $TEMP2/1" |bc)
 echo $TEMP2
@@ -118,30 +120,17 @@ echo "#$SENSOR_TEMP_ID2#$TEMP2" >> $TEMP_FILE
 echo "#$SENSOR_HUM_ID#$HUM" >> $TEMP_FILE
 echo "#$SENSOR_SPEED_ID#$SPEED" >> $TEMP_FILE
 echo "#$SENSOR_DIRECTION_ID#$DIRECTION" >> $TEMP_FILE
+echo "##" >> $TEMP_FILE
 
 #===============================================================================
 
 # Передача данных на Narodmon.ru
 # В случае успеха сервер отвечает "ОК", иначе возвращает текст ошибки
+# Перед отправкой проверяем таймаут датчика температуры
 
-# Перед отправкой проверяем:
-# 1) в файле нет повторяющихся строк, иначе убираем дубликаты;
-# 2) что передаем не пустой файл
-# LC=`cat /var/log/narodmon | wc -l`
-# if [ $LC -ge 2 ]
-# then
-#echo "$(sed '/##/d' $TEMP_FILE | awk '!($0 in a) {a[$0];print}')" > $TEMP_FILE
-echo "##" >> $TEMP_FILE
-#cat $TEMP_FILE >> $LOG_FILE
+if [ $Timeout == 'false' ]
+then
 RESULT=$(cat $TEMP_FILE | nc narodmon.ru 8283)
-#echo "$RESULT\n" >> $LOG_FILE
 echo $RESULT
-#if [ "$RESULT" == 'OK' ]
-#then
+fi
 cp /dev/null $TEMP_FILE
-#fi
-#if [ "$RESULT" == "ERROR NO CHANGES" ] || [ "$RESULT" == "429 Too Many Requests" ]
-#then
-#cp /dev/null /tmp/narodmon
-#fi
-#fi
